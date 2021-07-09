@@ -1,0 +1,13 @@
+version: '3.6'
+
+services:
+
+  mqtt-broker:
+    image: eclipse-mosquitto:1.5.3
+    container_name: mqtt-broker
+    ports:
+        - 1883:1883
+        - 9001:9001
+    volumes:
+        - ./data/mosquitto:/var/lib/mosquitto/:rw
+        - ./config/mosquitto:/mosquitto/config/:ro
