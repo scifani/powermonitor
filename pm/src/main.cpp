@@ -1,18 +1,13 @@
-#include <ESP8266WiFi.h>
-
-#include <sstream>
-
 #include "parameters.h"
 #include "logger.h"
 #include "init.h"
-#include "publisher.h"
-
-#define SERIAL_RX D5
+#include "mqtt.h"
 
 Logger logger;
 
-Publisher pub("192.168.8.110", 1883, "pm-001", "home/power");
-
+MqttBase mqttBase(MQTT_BROKER_ADDRESS, MQTT_BROKER_PORT, MQTT_CLIENT_ID);
+Publisher pub(MQTT_PUB_TOPIC, mqttBase);
+Subscriber sub(MQTT_SUB_TOPIC, mqttBase);
 
 void setup() {
 
@@ -22,7 +17,7 @@ void setup() {
 
   delay(5000);
 
-  pub.init();
+  mqttBase.init();
 
   int wl_status;
   int rc = wifi_init(WIFI_SSID, WIFI_PSWD, wl_status, 30000);
@@ -38,12 +33,23 @@ void setup() {
     led_blink(10, 250, true);
   }
 
+  if (rc == 0) {
+    rc = ntp_init();
+
+    if (rc != 0)
+      logger.error("NTP failed to get time from server");
+  }
+
   led_init(false);
+
+  logger.info("setup end!");
 }
 
 void loop() {
 
+  mqttBase.loop();
+
   pub.publish("funzionerà???");
 
-  delay(2000);
+  delay(4000);
 }

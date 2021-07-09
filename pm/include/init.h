@@ -1,5 +1,6 @@
 
 #include <ESP8266WiFi.h>
+#include <ESPDateTime.h>
 
 int serial_init(uint64_t baud) {
 
@@ -48,4 +49,13 @@ void led_blink(uint8_t count, uint16_t pause, bool init_state=false) {
         status = (status == HIGH) ? LOW : HIGH;
         digitalWrite(LED_BUILTIN, status);
     }
+}
+
+int ntp_init() {
+
+    DateTime.setTimeZone("CET");
+    DateTime.setServer("europe.pool.ntp.org");
+    DateTime.begin();
+
+    return DateTime.isTimeValid() ? 0 : 1;
 }
