@@ -54,24 +54,35 @@ void MqttBase::loop() {
     _mqtt_client.loop();
 }
 
-void MqttBase::reconnect() {
-    logger.debug("MqttBase::reconnect - begin. client_id=%s", _client_id);
+void MqttBase::reconnect(int num_retries) {
+    logger.debug("MqttBase::reconnect - begin. client_id=%s, num_retries=%d", _client_id, num_retries);
+
+    bool connected = false;
+    int count = 0;
 
     while (!_mqtt_client.connected()) {
         logger.debug("MqttBase::reconnect - attempting MQTT connection...");
 
-        if (_mqtt_client.connect(_client_id)) {
+        connected = _mqtt_client.connect(_client_id);
+        count++;
+
+        if (connected) {
             logger.info("MqttBase::reconnect - connected");
 
             for(const auto &it : _callbacks) {
-                logger.debug("MqttBase::init - registering topic %s", it.first.c_str());
+                logger.debug("MqttBase::reconnect - registering topic %s", it.first.c_str());
 
                 _mqtt_client.subscribe(it.first.c_str());
             }
-
-        } else {
-            logger.error("MqttBase::reconnect - rc = %d - Try again in 5 seconds...", _mqtt_client.state());
-            delay(5000);
+        }
+        else {
+            if (num_retries > count) {
+                logger.error("MqttBase::reconnect - rc = %d - Try again in 5 seconds...", _mqtt_client.state());
+                delay(5000);
+            }
+            else {
+                break;
+            }
         }
     }
 
@@ -82,7 +93,7 @@ void MqttBase::subscribers_callback(char* topic, uint8_t* payload, unsigned int 
 
     logger.debug("MqttBase::subscribers_callback - topic=%s", topic);
 
-    auto it = _callbacks.find(String(topic));
+    auto it = _callbacks.find(std::string(topic));
 
     if (it != _callbacks.end()) {
         logger.debug("MqttBase::subscribers_callback - topic found");
@@ -95,6 +106,33 @@ void MqttBase::subscribers_callback(char* topic, uint8_t* payload, unsigned int 
     } else {
         logger.warning("MqttBase::subscribers_callback - topic not found");
     }
+}
+
+HttpStatus::Code MqttBase::mqtt_config_handler(
+    const std::string& path,
+    const std::string& body,
+    const std::map<std::string, std::string>& query_params,
+    std::string& response) {
+
+    logger.info("MqttBase::mqtt_config_handler - Begin. path=%s, body=%s, query_params.len=%d", path.c_str(), body.c_str(), query_params.size());
+
+    auto host_it = query_params.find("host");
+    auto port_it = query_params.find("port");
+
+    if (host_it != query_params.end() && port_it != query_params.end()) {
+        const char* host = (*host_it).second.c_str();
+        int port = std::stoi((*port_it).second);
+
+        logger.info("MqttBase::mqtt_config_handler - setting mqtt broker to %s:%d", host, port);
+        strncpy(_host, host, sizeof(_host));
+        _port = port;
+        _mqtt_client.setServer(_host, _port);
+    }
+
+    HttpStatus::Code status_code = HttpStatus::Code::OK;
+
+    logger.info("MqttBase::mqtt_config_handler - End. status_code=%d", (int)status_code);
+    return status_code;
 }
 
 Publisher::Publisher(const char* topic, MqttBase& mqtt_base) {

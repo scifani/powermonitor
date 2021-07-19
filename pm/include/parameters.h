@@ -2,14 +2,16 @@
 #define WIFI_SSID "HUAWEI-B535-7AD4"
 #define WIFI_PSWD "QG6036H5D5G"
 
+#define SERIAL_BAUDRATE 9600
+#define DEBUG_SERIAL Serial1
+
 #define SERVER_PORT 80
 
-#define MQTT_BROKER_ADDRESS "192.168.8.110"
+#define MQTT_BROKER_ADDRESS "192.168.8.106"
 #define MQTT_BROKER_PORT 1883
 #define MQTT_CLIENT_ID "pm-001"
 #define MQTT_PUB_TOPIC "home/power"
 #define MQTT_SUB_TOPIC "pzem/config"
 
-#define SERIAL_BAUDRATE 115200
-
-#define SERIAL_RX D5
+#define WS_SERVER "192.168.8.110"
+#define WS_PORT 44444

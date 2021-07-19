@@ -5,7 +5,9 @@
 int serial_init(uint64_t baud) {
 
     Serial.begin(baud);
+    delay(50);
 
+    Serial1.begin(baud);
     delay(50);
 
     return 0;

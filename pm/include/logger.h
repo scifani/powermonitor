@@ -5,6 +5,29 @@
 #include <DateTime.h>
 
 #include <sstream>
+#include <vector>
+
+#include "parameters.h"
+
+class ILogWriter {
+public:
+    virtual void write(const char* message) = 0;
+};
+
+class SerialWriter : public ILogWriter {
+public:
+    SerialWriter(HardwareSerial* serial) {
+        _serial = serial;
+    }
+
+    void write(const char* message) {
+        _serial->write(message);
+    }
+
+private:
+    HardwareSerial* _serial;
+};
+
 
 class Logger {
 
@@ -16,6 +39,10 @@ class Logger {
             INFO,
             DEBUG
         };
+
+        void add_writer(ILogWriter* writer) {
+            _writers.push_back(writer);
+        }
 
         void error(const char* format, ...) {
 
@@ -73,7 +100,9 @@ class Logger {
             ss << " [" << SeverityStr(severity) << "] - ";
             ss << message << "\n";
 
-            Serial.write(ss.str().c_str());
+            for(size_t i=0; i < _writers.size(); i++) {
+               _writers[i]->write(ss.str().c_str());
+            }
         }
 
         static const char* SeverityStr(Severity severity) {
@@ -91,6 +120,8 @@ class Logger {
                 return "";
             }
         }
+
+        std::vector<ILogWriter*> _writers;
 };
 
 #endif // __LOGGER__
