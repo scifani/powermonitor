@@ -4,10 +4,13 @@
 #include "mqtt.h"
 #include "api_server.h"
 #include "ws.h"
+#include "pzem-004t.h"
+
+DateTimeClass dt;
+time_t last_read = 0;
 
 SerialWriter serial_writer(&DEBUG_SERIAL);
-SerialWriter serial_writer1(&Serial);
-//WsWriter ws_writer;
+WsWriter ws_writer;
 Logger logger;
 
 MqttBase mqttBase(MQTT_BROKER_ADDRESS, MQTT_BROKER_PORT, MQTT_CLIENT_ID);
@@ -15,17 +18,14 @@ Publisher pub(MQTT_PUB_TOPIC, mqttBase);
 Subscriber sub(MQTT_SUB_TOPIC, mqttBase);
 ApiServer server(SERVER_PORT);
 Ws ws;
+Pzem pzem;
 
-int publish_count = 0;
-int uart_read_count = 0;
-char serial_buff[128];
 
 void setup() {
 
   serial_init(SERIAL_BAUDRATE);
 
   logger.add_writer(&serial_writer);
-  logger.add_writer(&serial_writer1);
 
   led_init(true);
 
@@ -63,8 +63,10 @@ void setup() {
 
     ws.init(WS_SERVER, WS_PORT);
 
-    //ws_writer.set_ws(&ws);
-    //logger.add_writer(&ws_writer);
+    ws_writer.set_ws(&ws);
+    logger.add_writer(&ws_writer);
+
+    pzem.init();
   }
 
   led_init(false);
@@ -80,31 +82,23 @@ void loop() {
 
   ws.loop();
 
-  if (publish_count == 10000) {
-    pub.publish("funzionerà???");
-    publish_count = 0;
+  time_t now = dt.now();
 
-    ws.sendTxt("funzionerà???");
-  }
-  else {
-    publish_count++;
-  }
+  if (difftime(now, last_read) > 10) {
 
-/*
-  if (uart_read_count == 10000) {
-    if(Serial.available() > 0) {
-      int sz = Serial.read(serial_buff, sizeof(serial_buff));
-      std::stringstream ss;
-      ss << "RX[" << sz << "]: " << serial_buff;
-      pub.publish(ss.str().c_str());
+    PzemData data;
+    std::string json;
+
+    if (pzem.loop(data)) {
+
+      Pzem::data2json(data, json);
+
+      pub.publish(json.c_str());
     }
-    uart_read_count = 0;
-  }
-  else {
-    uart_read_count++;
-  }
-*/
-  //0x01 + 0x04 + 0x00 + 0x00 + 0x00 + 0x0A + 0xHH + 0xLL
+    else {
+      pub.publish("{\"error\": \"cannot read pzem data\"}");
+    }
 
-
+    last_read = now;
+  }
 }

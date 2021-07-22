@@ -63,7 +63,7 @@ void MqttBase::reconnect(int num_retries) {
     while (!_mqtt_client.connected()) {
         logger.debug("MqttBase::reconnect - attempting MQTT connection...");
 
-        connected = _mqtt_client.connect(_client_id);
+        connected = _mqtt_client.connect(_client_id, MQTT_BROKER_USER, MQTT_BROKER_PSWD);
         count++;
 
         if (connected) {
