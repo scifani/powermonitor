@@ -7,7 +7,6 @@
 #include <sstream>
 #include <vector>
 
-#include "parameters.h"
 
 class ILogWriter {
 public:

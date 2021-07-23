@@ -3,12 +3,14 @@
 
 extern Logger logger;
 
-MqttBase::MqttBase(const char* host, int port, const char* client_id) :
+MqttBase::MqttBase(const char* host, int port, const char* user, const char* pswd, const char* client_id) :
     _mqtt_client(*this)
 {
-    strncpy(_host, host, sizeof(_host));
-    strncpy(_client_id, client_id, sizeof(_client_id));
+    _host = host;
     _port = port;
+    _user = user;
+    _pswd = pswd;
+    _client_id = client_id;
 }
 
 MqttBase::~MqttBase() {
@@ -22,7 +24,7 @@ void MqttBase::register_topic(const char* topic, std::function<void(char*, unsig
 void MqttBase::init() {
     logger.debug("MqttBase::init - begin. host=%s, port=%d", _host, _port);
 
-    _mqtt_client.setServer(_host, _port);
+    _mqtt_client.setServer(_host.c_str(), _port);
 
     if (_callbacks.size() > 0) {
         using namespace std::placeholders;
@@ -63,7 +65,7 @@ void MqttBase::reconnect(int num_retries) {
     while (!_mqtt_client.connected()) {
         logger.debug("MqttBase::reconnect - attempting MQTT connection...");
 
-        connected = _mqtt_client.connect(_client_id, MQTT_BROKER_USER, MQTT_BROKER_PSWD);
+        connected = _mqtt_client.connect(_client_id.c_str(), _user.c_str(), _pswd.c_str());
         count++;
 
         if (connected) {
@@ -118,15 +120,23 @@ HttpStatus::Code MqttBase::mqtt_config_handler(
 
     auto host_it = query_params.find("host");
     auto port_it = query_params.find("port");
+    auto user_it = query_params.find("user");
+    auto pswd_it = query_params.find("pswd");
 
     if (host_it != query_params.end() && port_it != query_params.end()) {
-        const char* host = (*host_it).second.c_str();
-        int port = std::stoi((*port_it).second);
+        _host = (*host_it).second;
+        _port = std::stoi((*port_it).second);
 
-        logger.info("MqttBase::mqtt_config_handler - setting mqtt broker to %s:%d", host, port);
-        strncpy(_host, host, sizeof(_host));
-        _port = port;
-        _mqtt_client.setServer(_host, _port);
+        if (user_it != query_params.end() && pswd_it != query_params.end()) {
+            _user = (*user_it).second;
+            _pswd = (*pswd_it).second;
+        }
+
+        logger.info("MqttBase::mqtt_config_handler - mqtt broker set to %s:%d", _host.c_str(), _port);
+
+        _mqtt_client.disconnect();
+        _mqtt_client.setServer(_host.c_str(), _port);
+        _mqtt_client.connect(_client_id.c_str(), _user.c_str(), _pswd.c_str());
     }
 
     HttpStatus::Code status_code = HttpStatus::Code::OK;

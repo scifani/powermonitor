@@ -66,7 +66,7 @@ void Pzem::data2json(const PzemData& data, std::string& json) {
     ss << '\t' << "\"power\": " << data.power << ",\n";
     ss << '\t' << "\"energy\": " << data.energy << ",\n";
     ss << '\t' << "\"frequency\": " << data.frequency << ",\n";
-    ss << '\t' << "\"pf\": " << data.pf << ",\n";
+    ss << '\t' << "\"pf\": " << data.pf << "\n";
     ss << "}";
     json = ss.str();
 }

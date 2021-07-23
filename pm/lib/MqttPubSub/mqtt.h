@@ -7,7 +7,7 @@
 class MqttBase : WiFiClient {
 
 public:
-    MqttBase(const char* host, int port, const char* client_id);
+    MqttBase(const char* host, int port, const char* user, const char* pswd, const char* client_id);
     virtual ~MqttBase();
 
     void register_topic(const char* topic, std::function<void(char*, unsigned int)> callback);
@@ -26,8 +26,10 @@ private:
     void subscribers_callback(char* topic, uint8_t* payload, unsigned int length);
 
     PubSubClient _mqtt_client;
-    char _client_id[128];
-    char _host[128];
+    std::string _client_id;
+    std::string _user;
+    std::string _pswd;
+    std::string _host;
     int _port;
     std::map<std::string, std::function<void(char*, unsigned int)>> _callbacks;
 };

@@ -13,7 +13,7 @@ SerialWriter serial_writer(&DEBUG_SERIAL);
 WsWriter ws_writer;
 Logger logger;
 
-MqttBase mqttBase(MQTT_BROKER_ADDRESS, MQTT_BROKER_PORT, MQTT_CLIENT_ID);
+MqttBase mqttBase(MQTT_BROKER_ADDRESS, MQTT_BROKER_PORT, MQTT_BROKER_USER, MQTT_BROKER_PSWD, MQTT_CLIENT_ID);
 Publisher pub(MQTT_PUB_TOPIC, mqttBase);
 Subscriber sub(MQTT_SUB_TOPIC, mqttBase);
 ApiServer server(SERVER_PORT);
