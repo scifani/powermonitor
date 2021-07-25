@@ -1,0 +1,6 @@
+from(bucket: "mybucket")
+  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)
+  |> filter(fn: (r) => r["_measurement"] == "mqtt_consumer")
+  |> filter(fn: (r) => r["_field"] == "power")
+  |> aggregateWindow(every: v.windowPeriod, fn: last, createEmpty: true)
+  |> yield(name: "last")
