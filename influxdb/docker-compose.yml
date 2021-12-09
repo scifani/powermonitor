@@ -17,7 +17,7 @@ services:
     image: quay.io/influxdb/influxdb:v2.0.3
     volumes:
       # Mount for influxdb data directory and configuration
-      - influxdb-storage:/.influxdbv2
+      - ./data/influxdb:/.influxdbv2
     ports:
       - "8086:8086"
 
@@ -49,11 +49,7 @@ services:
       - 3000:3000
     user: "104"
     volumes:
-      - grafana-storage:/var/lib/grafana
+      - ./data/grafana:/var/lib/grafana
       - ./grafana/:/etc/grafana/provisioning
     depends_on:
       - influxdb
-
-volumes:
-  influxdb-storage:
-  grafana-storage:

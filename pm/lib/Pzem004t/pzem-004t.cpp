@@ -14,8 +14,8 @@ Pzem::~Pzem() {
 
 }
 
-void Pzem::init() {
-    uint8_t addr = _pzem.getAddress();
+void Pzem::init() {    
+    uint8_t addr = _pzem.readAddress();
     logger.debug("Pzem::init - address = %d", addr);
 }
 
@@ -24,7 +24,7 @@ bool Pzem::loop(PzemData& data) {
     logger.debug("Pzem::loop - begin. ");
     bool ret = false;
 
-    uint8_t addr = _pzem.getAddress();
+    uint8_t addr = _pzem.readAddress(true);
     logger.debug("Pzem::loop - address = %d", addr);
 
     // Read the data from the sensor
