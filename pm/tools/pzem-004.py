@@ -115,6 +115,8 @@ class PZEM:
   def set_address(self, new_address: int):
     logger.debug("PZEM.set_address - Begin. new_address=%s", new_address)
 
+    new_address = int(new_address)
+
     if new_address < 1 or new_address > 247:
       raise Exception("Invalid address! Address must be in range 1-247")
     
@@ -202,6 +204,7 @@ def read(options):
   print(f'running read: port = {options.port}')
   pzem = PZEM()
   pzem.connect(options.port)
+  pzem.read_address()
   try:
     while True:
       pzem.update_values()
