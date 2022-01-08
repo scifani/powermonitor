@@ -1,6 +1,8 @@
 import logging
 import serial
 import time
+import argparse
+import sys
 
 logging.basicConfig(format='%(asctime)s %(levelname)-8s %(message)s', level=logging.DEBUG)
 logger = logging.getLogger("PZEM")
@@ -97,7 +99,7 @@ class PZEM:
     response = self._receive()
 
     if len(response) != 7:
-      raise f"Invalid response length! Expected 7, got {len(response)}"
+      raise Exception(f"Invalid response length! Expected 7, got {len(response)}")
 
     #Get the current address
     addr = (response[3] << 8 | response[4])
@@ -108,13 +110,34 @@ class PZEM:
 
     logger.debug(f"PZEM.read_address - End. addr = {addr}")
 
+    return addr
+
+  def set_address(self, new_address: int):
+    logger.debug("PZEM.set_address - Begin. new_address=%s", new_address)
+
+    if new_address < 1 or new_address > 247:
+      raise Exception("Invalid address! Address must be in range 1-247")
+    
+    self._sendCmd8(PZEM.CMD_WSR, PZEM.WREG_ADDR, new_address, False)
+    response = self._receive()
+
+    print(response)
+
+    self.addr = new_address
+    addr = self.read_address()
+
+    if (addr != new_address):
+      raise Exception("set_address failure! Expected address is %d, actual is %d", new_address, addr)
+    
+    logger.debug(f"PZEM.set_address - End.")
+
   def update_values(self):
     logger.debug("PZEM.update_values - Begin.")
     self._sendCmd8(PZEM.CMD_RIR, PZEM.REG_VOLTAGE, 10)
     response = self._receive()
 
     if len(response) != 25:
-      raise f"Invalid response length! Expected 25, got {len(response)}"
+      raise Exception(f"Invalid response length! Expected 25, got {len(response)}")
 
     out_values = {
       "voltage": (response[3] << 8 | response[4])/10.0,
@@ -159,17 +182,55 @@ class PZEM:
         break
     return recBuffer
 
-
-if __name__ == "__main__":
+def setaddress(options):
+  print(f'running setAddress: port = {options.port}, addr = {options.addr}')
   pzem = PZEM()
-  pzem.connect("COM5")
-  pzem.read_address()
-  
+  pzem.connect(options.port)
+  pzem.set_address(options.addr)
+  pzem.disconnect()
+  print('Address has been set!')
+
+def readaddress(options):
+  print(f'running readAddress: port = {options.port}')
+  pzem = PZEM()
+  pzem.connect(options.port)
+  addr=pzem.read_address()  
+  pzem.disconnect()
+  print(f'Address={addr}')
+
+def read(options):
+  print(f'running read: port = {options.port}')
+  pzem = PZEM()
+  pzem.connect(options.port)
   try:
     while True:
       pzem.update_values()
       time.sleep(3)
   except KeyboardInterrupt:
-    print('interrupted!')
-
+    print('interrupted!') 
   pzem.disconnect()
+
+if __name__ == "__main__":
+  parser = argparse.ArgumentParser()
+  parser.add_argument('-p','--port', help='Serial Port', required=True)
+  subparsers = parser.add_subparsers()
+
+  # Create a setAddress subcommand    
+  parser_setAddress = subparsers.add_parser('setaddress', help='set pzem module address')
+  parser_setAddress.add_argument('-a','--addr', help='New address', required=True)
+  parser_setAddress.set_defaults(func=setaddress)
+
+  # Create a readAddress subcommand       
+  parser_readAddress = subparsers.add_parser('readaddress', help='read pzem module address')
+  parser_readAddress.set_defaults(func=readaddress)
+
+  # Create a read subcommand       
+  parser_read = subparsers.add_parser('read', help='read values')
+  parser_read.set_defaults(func=read)
+
+  if len(sys.argv) <= 1:
+      sys.argv.append('--help')
+
+  options = parser.parse_args()
+
+  options.func(options)
