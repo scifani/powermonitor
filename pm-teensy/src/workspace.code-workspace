@@ -1,0 +1,12 @@
+{
+	"folders": [
+		{
+			"path": "..\\..\\..\\..\\simo-project\\teensy"
+		},
+		{
+			"name": "HelloWorld",
+			"path": ".."
+		}
+	],
+  "settings": {}
+}
